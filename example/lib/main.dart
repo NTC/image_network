@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_network/image_network.dart';
 
@@ -31,7 +30,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final String imageUrl =
-      "https://scaffoldtecnologia.com.br/wp-content/uploads/2021/10/app-2.png";
+      "https://www.imagenetwork.scaffoldtecnologia.com.br/flutter.jpg";
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +41,6 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: ImageNetwork(
           image: imageUrl,
-          imageCache: CachedNetworkImageProvider(imageUrl),
           height: 150,
           width: 150,
           duration: 1500,
@@ -59,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Icons.error,
             color: Colors.red,
           ),
-          borderRadius: BorderRadius.circular(70),
+          borderRadius: BorderRadius.circular(10),
           onTap: () {
             showDialog(
                 context: context,

@@ -1,10 +1,11 @@
 library image_network;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_network/src/app_image.dart';
 import 'package:image_network/src/web/box_fit_web.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:webviewimage/webviewimage.dart';
+
 export 'package:image_network/src/web/box_fit_web.dart';
 
 ///Image Network for Flutter app (Android - Ios - Web)
@@ -105,11 +106,11 @@ class _ImageNetworkState extends State<ImageNetwork>
   late WebViewXController webviewController;
   late Animation<double> _animation;
 
-  /// bool variable used to validate (overlay with loading widget)
+  /// [loading] bool variable used to validate (overlay with loading widget)
   /// while loading the image
   bool loading = true;
 
-  /// bool variable used to validate (overlay with error widget)
+  /// [error] bool variable used to validate (overlay with error widget)
   /// if an error occurs when loading the image
   bool error = false;
 
@@ -117,9 +118,14 @@ class _ImageNetworkState extends State<ImageNetwork>
   void initState() {
     super.initState();
     _controller = AnimationController(
-        vsync: this, duration: Duration(milliseconds: widget.duration));
-    _animation = Tween(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _controller, curve: widget.curve));
+      vsync: this,
+      duration: Duration(
+        milliseconds: widget.duration,
+      ),
+    );
+    _animation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: widget.curve),
+    );
     _controller.forward();
   }
 
@@ -132,132 +138,168 @@ class _ImageNetworkState extends State<ImageNetwork>
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-        opacity: _animation,
+      opacity: _animation,
 
-        ///Checking if the application is running on the web or android && iOS
-        child: kIsWeb == false
+      ///Checking if the application is running on the web or android && iOS
+      child: kIsWeb == false
 
-            /// Android or iOS
-            ? AppImage(
-                image: widget.image,
-                height: widget.height,
-                width: widget.width,
-                fit: widget.fitAndroidIos,
-                onTap: widget.onTap,
-                borderRadius: widget.borderRadius,
-                onLoading: widget.onLoading,
-                onError: widget.onError,
-                imageProvider: widget.imageCache,
-              )
+          /// Android or iOS
+          ? AppImage(
+              image: widget.image,
+              height: widget.height,
+              width: widget.width,
+              fit: widget.fitAndroidIos,
+              onTap: widget.onTap,
+              borderRadius: widget.borderRadius,
+              onLoading: widget.onLoading,
+              onError: widget.onError,
+              imageProvider: widget.imageCache,
+            )
 
-            /// Web
-            : widget.borderRadius != BorderRadius.zero
-                ? ClipRRect(
-                    borderRadius: widget.borderRadius,
-                    child: _webImage(),
-                  )
-                : _webImage());
+          /// Web
+          : _webImage(),
+    );
   }
 
   Widget _webImage() {
     return Stack(
       children: [
+        /// Only show the webpage with the image if there's no error
+        if (!error)
+          Align(
+            alignment: Alignment.center,
+            child: ClipRRect(
+              borderRadius: widget.borderRadius,
+              child: WebViewX(
+                key: const ValueKey('gabriel_patrick_souza'),
+                ignoreAllGestures: true,
+                initialContent: _imagePage(
+                  image: widget.image,
+                  pointer: widget.onPointer,
+                  fitWeb: widget.fitWeb,
+                  fullScreen: widget.fullScreen,
+                  height: widget.height,
+                  width: widget.width,
+                ),
+                initialSourceType: SourceType.html,
+                height: widget.height,
+                width: widget.width,
+                javascriptMode: JavascriptMode.unrestricted,
+                onWebViewCreated: (controller) =>
+                    webviewController = controller,
+                onPageFinished: (src) {
+                  if (widget.debugPrint) {
+                    debugPrint('✓ The page has finished loading!\n');
+                  }
+                },
+                jsContent: const {
+                  EmbeddedJsContent(
+                    webJs: "function onClick() { callback() }",
+                    mobileJs: "function onClick() { callback.postMessage() }",
+                  ),
+                  EmbeddedJsContent(
+                    webJs: "function onLoad(msg) { callbackLoad(msg) }",
+                    mobileJs:
+                        "function onLoad(msg) { callbackLoad.postMessage(msg) }",
+                  ),
+                  EmbeddedJsContent(
+                    webJs: "function onTap(msg) { callbackTap(msg) }",
+                    mobileJs:
+                        "function onTap(msg) { callbackTap.postMessage(msg) }",
+                  ),
+                  EmbeddedJsContent(
+                    webJs: "function onError(msg) { callbackError(msg) }",
+                    mobileJs:
+                        "function onError(msg) { callbackError.postMessage(msg) }",
+                  ),
+                },
+                dartCallBacks: {
+                  DartCallback(
+                    name: 'callbackLoad',
+                    callBack: (msg) {
+                      if (msg) {
+                        setState(() => loading = false);
+                      }
+                    },
+                  ),
+                  DartCallback(
+                    name: 'callbackTap',
+                    callBack: (msg) {
+                      if (msg) {
+                        if (widget.onTap != null) {
+                          widget.onTap!();
+                        }
+                      }
+                    },
+                  ),
+                  DartCallback(
+                    name: 'callbackError',
+                    callBack: (msg) {
+                      if (msg) {
+                        setState(() => error = true);
+                      }
+                    },
+                  ),
+                },
+                webSpecificParams: const WebSpecificParams(),
+                mobileSpecificParams: const MobileSpecificParams(
+                  androidEnableHybridComposition: true,
+                ),
+              ),
+            ),
+          ),
+        /// Only show the loading widget if the image is still loading and there's no error
+        if (!error && loading)
+          Align(
+            alignment: Alignment.center,
+            child: SizedBox(
+              height: widget.height,
+              width: widget.width,
+              child: Center(child: widget.onLoading),
+            ),
+          ),
+        /// Only show the error widget if there's an error
+        if (error)
+          Align(
+            alignment: Alignment.center,
+            child: SizedBox(
+              height: widget.height,
+              width: widget.width,
+              child: widget.onError,
+            ),
+          ),
         Align(
           alignment: Alignment.center,
-          child: WebViewX(
-            key: const ValueKey('gabriel_patrick_souza'),
-            initialContent: _imagePage(
-              image: widget.image,
-              pointer: widget.onPointer,
-              fitWeb: widget.fitWeb,
-              fullScreen: widget.fullScreen,
+          child: InkWell(
+            onTap: () {
+              if (widget.onTap != null) {
+                widget.onTap!();
+              }
+            },
+            mouseCursor: widget.onPointer ? null : MouseCursor.defer,
+            hoverColor: Colors.transparent,
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: SizedBox(
               height: widget.height,
               width: widget.width,
             ),
-            initialSourceType: SourceType.html,
-            height: widget.height,
-            width: widget.width,
-            javascriptMode: JavascriptMode.unrestricted,
-            onWebViewCreated: (controller) => webviewController = controller,
-            onPageFinished: (src) {
-              if (widget.debugPrint) {
-                debugPrint('✓ The page has finished loading!\n');
-              }
-            },
-            jsContent: const {
-              EmbeddedJsContent(
-                webJs: "function onClick() { callback() }",
-                mobileJs: "function onClick() { callback.postMessage() }",
-              ),
-              EmbeddedJsContent(
-                webJs: "function onLoad(msg) { callbackLoad(msg) }",
-                mobileJs:
-                    "function onLoad(msg) { callbackLoad.postMessage(msg) }",
-              ),
-              EmbeddedJsContent(
-                webJs: "function onTap(msg) { callbackTap(msg) }",
-                mobileJs:
-                    "function onTap(msg) { callbackTap.postMessage(msg) }",
-              ),
-              EmbeddedJsContent(
-                webJs: "function onError(msg) { callbackError(msg) }",
-                mobileJs:
-                    "function onError(msg) { callbackError.postMessage(msg) }",
-              ),
-            },
-            dartCallBacks: {
-              DartCallback(
-                name: 'callbackLoad',
-                callBack: (msg) {
-                  if (msg) {
-                    setState(() => loading = false);
-                  }
-                },
-              ),
-              DartCallback(
-                name: 'callbackTap',
-                callBack: (msg) {
-                  if (msg) {
-                    if (widget.onTap != null) {
-                      widget.onTap!();
-                    }
-                  }
-                },
-              ),
-              DartCallback(
-                name: 'callbackError',
-                callBack: (msg) {
-                  if (msg) {
-                    setState(() => error = true);
-                  }
-                },
-              ),
-            },
-            webSpecificParams: const WebSpecificParams(),
-            mobileSpecificParams: const MobileSpecificParams(
-              androidEnableHybridComposition: true,
-            ),
           ),
         ),
-        Align(
-            alignment: Alignment.center,
-            child: loading ? widget.onLoading : Container()),
-        Align(
-            alignment: Alignment.center,
-            child: error ? widget.onError : Container()),
       ],
     );
   }
 
   ///web page containing image only
   ///
-  String _imagePage(
-      {required String image,
-      required bool pointer,
-      required bool fullScreen,
-      required double height,
-      required double width,
-      required BoxFitWeb fitWeb}) {
+  String _imagePage({
+    required String image,
+    required bool pointer,
+    required bool fullScreen,
+    required double height,
+    required double width,
+    required BoxFitWeb fitWeb,
+  }) {
     return """<!DOCTYPE html>
             <html>
               <head>
@@ -284,7 +326,7 @@ class _ImageNetworkState extends State<ImageNetwork>
                 img-src * data: blob: android-webview-video-poster:; style-src * 'unsafe-inline';">
              </head>
              <body>
-                <img id="myImg" src="$image" frameborder="0" allow="fullscreen"  allowfullscreen onclick = "onClick()" onerror= onError(this)>
+                <img id="myImg" src="$image" frameborder="0" allow="fullscreen"  allowfullscreen onclick = "onClick()" onerror = onError(this)>
                 <script>
                   window.onload = function onLoad(){ callbackLoad(true);}
                 </script>
@@ -292,7 +334,7 @@ class _ImageNetworkState extends State<ImageNetwork>
             <script>
                 function onClick() { callbackTap(true) }
                 function onError(source) { 
-                  source.src = "https://scaffoldtecnologia.com.br/wp-content/uploads/2021/12/transparente.png";
+                  source.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
                   source.onerror = ""; 
                   callbackError(true);
                   return true; 

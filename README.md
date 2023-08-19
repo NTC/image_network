@@ -2,7 +2,7 @@
 # 🌐 Image Network
 
 <p align="center">
-  <img src="https://scaffoldtecnologia.com.br/wp-content/uploads/2022/01/image_network.jpg" width=100%/>
+  <img src="https://www.imagenetwork.scaffoldtecnologia.com.br/manager.png" width=100%/>
 </p>
 
 Image Network is a package that allows you to render images on the web using CanvasKit without having problems with CORS.
@@ -12,13 +12,13 @@ Image Network is a package that allows you to render images on the web using Can
     <img src="https://img.shields.io/badge/build-passing-green"
          alt="Build">
   </a>
-  <a href="https://pub.dev/packages/image_network"><img src="https://img.shields.io/badge/pub-v2.4.1-blue"></a>
+  <a href="https://pub.dev/packages/image_network"><img src="https://img.shields.io/badge/pub-v2.5.4-blue"></a>
 
 </p>
 
 <p align="center">
-  <img src="https://scaffoldtecnologia.com.br/wp-content/uploads/2022/01/new_example.gif" width=56% hspace="10"/>
-  <img src="https://scaffoldtecnologia.com.br/wp-content/uploads/2022/01/new_example_mobile.gif" width=21% hspace="10"/>
+  <img src="https://www.imagenetwork.scaffoldtecnologia.com.br/pointer.gif" width=40% hspace="10"/>
+  <img src="https://www.imagenetwork.scaffoldtecnologia.com.br/fit.gif" width=40% hspace="10"/>
 </p>
 
 
@@ -59,7 +59,6 @@ String imageUrl = "https://scaffoldtecnologia.com.br/wp-content/uploads/2021/10/
 ```dart
 ImageNetwork(
     image: imageUrl,
-    imageCache: CachedNetworkImageProvider(imageUrl),
     height: 150,
     width: 150,
     duration: 1500,
